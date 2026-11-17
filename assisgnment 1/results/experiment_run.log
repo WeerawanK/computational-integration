@@ -1,0 +1,45 @@
+=== Flood dataset: 10-fold cross validation ===
+F01-baseline: hidden=[5], lr=0.1, momentum=0.5, seed=1
+  Average MAE = 11.7256 ± 1.3014
+F02-hidden-3: hidden=[3], lr=0.1, momentum=0.5, seed=1
+  Average MAE = 11.9098 ± 1.3623
+F03-hidden-10: hidden=[10], lr=0.1, momentum=0.5, seed=1
+  Average MAE = 12.1168 ± 1.4793
+F04-two-hidden: hidden=[10, 5], lr=0.1, momentum=0.5, seed=1
+  Average MAE = 12.3926 ± 1.5370
+F05-lr-0.03: hidden=[5], lr=0.03, momentum=0.5, seed=1
+  Average MAE = 17.1776 ± 1.8004
+F06-lr-0.30: hidden=[5], lr=0.3, momentum=0.5, seed=1
+  Average MAE = 9.2812 ± 1.6971
+F07-momentum-0.0: hidden=[5], lr=0.1, momentum=0.0, seed=1
+  Average MAE = 14.2853 ± 1.7589
+F08-momentum-0.9: hidden=[5], lr=0.1, momentum=0.9, seed=1
+  Average MAE = 9.6203 ± 2.1766
+F09-weight-seed-42: hidden=[5], lr=0.1, momentum=0.5, seed=42
+  Average MAE = 11.7622 ± 1.7694
+F10-weight-seed-99: hidden=[5], lr=0.1, momentum=0.5, seed=99
+  Average MAE = 11.5674 ± 1.9643
+
+=== cross.pat: 10-fold cross validation ===
+C01-baseline: hidden=[4], lr=0.1, momentum=0.5, seed=1
+  Average accuracy = 83.50% ± 7.84%
+C02-hidden-2: hidden=[2], lr=0.1, momentum=0.5, seed=1
+  Average accuracy = 76.50% ± 11.07%
+C03-hidden-8: hidden=[8], lr=0.1, momentum=0.5, seed=1
+  Average accuracy = 87.00% ± 6.32%
+C04-two-hidden: hidden=[8, 4], lr=0.1, momentum=0.5, seed=1
+  Average accuracy = 54.50% ± 16.57%
+C05-lr-0.03: hidden=[4], lr=0.03, momentum=0.5, seed=1
+  Average accuracy = 48.00% ± 10.59%
+C06-lr-0.30: hidden=[4], lr=0.3, momentum=0.5, seed=1
+  Average accuracy = 94.50% ± 4.97%
+C07-momentum-0.0: hidden=[4], lr=0.1, momentum=0.0, seed=1
+  Average accuracy = 62.50% ± 14.39%
+C08-momentum-0.9: hidden=[4], lr=0.1, momentum=0.9, seed=1
+  Average accuracy = 90.50% ± 7.62%
+C09-weight-seed-42: hidden=[4], lr=0.1, momentum=0.5, seed=42
+  Average accuracy = 85.00% ± 8.82%
+C10-weight-seed-99: hidden=[4], lr=0.1, momentum=0.5, seed=99
+  Average accuracy = 81.50% ± 4.74%
+
+บันทึกผลแล้วใน results/

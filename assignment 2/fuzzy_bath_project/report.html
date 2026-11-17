@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<title>รายงานระบบควบคุมอุณหภูมิน้ำอาบด้วย Fuzzy Logic</title>
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+body { font-family: "Leelaw UI", Tahoma, sans-serif; color:#202124; line-height:1.55; font-size:11pt; }
+h1,h2,h3 { color:#174a7e; } h1 { text-align:center; font-size:25pt; margin-top:45mm; }
+h2 { border-bottom:2px solid #2d6ca2; padding-bottom:4px; margin-top:22px; }
+h3 { margin-bottom:4px; } .cover { page-break-after:always; text-align:center; }
+.subtitle { font-size:16pt; margin:22px 0; } .meta { margin-top:40mm; font-size:12pt; }
+.figure { text-align:center; margin:14px 0; page-break-inside:avoid; }
+.figure img { max-width:100%; max-height:245mm; } .caption { font-size:10pt; }
+table { border-collapse:collapse; width:100%; margin:8px 0 14px; page-break-inside:avoid; }
+th,td { border:1px solid #777; padding:5px 7px; text-align:center; }
+th { background:#dceaf7; } .note { background:#eef6fc; border-left:4px solid #2d6ca2; padding:8px 12px; }
+pre { white-space:pre-wrap; font:8pt Consolas, "Courier New", monospace; background:#f4f4f4;
+      border:1px solid #ccc; padding:8px; page-break-inside:auto; }
+.pagebreak { page-break-before:always; } li { margin:4px 0; }
+</style></head><body>
+<section class="cover">
+<h1>รายงานการออกแบบและจำลองระบบ<br>ควบคุมอุณหภูมิน้ำอาบด้วย Fuzzy Logic</h1>
+<div class="subtitle">Mamdani Fuzzy Inference System</div>
+<div class="meta">Computer Assignment 2<br>
+ภาคเรียนที่ 1 ปีการศึกษา 2569<br><br>
+หัวข้อ: Fuzzy Bath Water Temperature Control</div>
+</section>
+
+<h2>บทคัดย่อ</h2>
+<p>รายงานนี้นำเสนอระบบควบคุมอุณหภูมิน้ำอาบโดยใช้ตรรกศาสตร์คลุมเครือแบบ Mamdani
+เพื่อคำนวณเปอร์เซ็นต์การเปิดวาล์วน้ำร้อนจากอุณหภูมิน้ำปัจจุบันและอุณหภูมิเป้าหมาย
+ระบบใช้การอนุมานแบบ AND = min, implication และ aggregation = max และ
+defuzzification แบบ centroid จากนั้นทดสอบด้วยแบบจำลองก๊อกผสมน้ำร้อน/น้ำเย็น
+แบบ first-order ผลการทดลองทั้งสามกรณีแสดงว่าระบบปรับอุณหภูมิเข้าใกล้ค่าเป้าหมาย
+โดยมี steady-state error อยู่ในช่วง 0.383–1.500°C</p>
+
+<h2>1. ลักษณะการทำงานของระบบ</h2>
+<p>อินพุตของระบบมี 2 ค่า ได้แก่ อุณหภูมิน้ำปัจจุบัน (0–60°C) และอุณหภูมิเป้าหมาย
+(25–45°C) ส่วนเอาต์พุตคือเปอร์เซ็นต์การเปิดวาล์วน้ำร้อน (0–100%).
+การประมวลผลประกอบด้วย 5 ขั้นตอน: fuzzification, rule evaluation,
+implication, aggregation และ centroid defuzzification.</p>
+<div class="note"><b>แบบจำลองพลวัต:</b>
+T_mix = T_cold + (u/100)(T_hot − T_cold) และ
+T(t+1) = T(t) + k(T_mix − T(t)) โดยใช้ T_hot=60°C, T_cold=15°C และ k=0.25</div>
+
+<h3>1.1 ฟังก์ชันสมาชิก</h3>
+<p>อุณหภูมิปัจจุบันแบ่งเป็น Cold, Cool, Warm, Hot; อุณหภูมิเป้าหมายแบ่งเป็น
+Low, Medium, High; และวาล์วน้ำร้อนแบ่งเป็น VeryLow, Low, Medium, High, VeryHigh
+โดยใช้ฟังก์ชันสามเหลี่ยมและคางหมูเพื่อให้เกิดการเปลี่ยนผ่านที่ต่อเนื่อง</p>
+<div class="figure"><img src="outputs/1_membership_functions.png">
+<div class="caption">รูปที่ 1 ฟังก์ชันสมาชิกของอินพุตและเอาต์พุต</div></div>
+
+<h3>1.2 ฐานกฎ</h3>
+<table><tr><th>ลำดับ</th><th>อุณหภูมิปัจจุบัน</th><th>เป้าหมาย</th><th>วาล์วน้ำร้อน</th></tr>
+<tr><td>1</td><td>เย็น</td><td>ต่ำ</td><td>สูง</td></tr>
+<tr><td>2</td><td>เย็น</td><td>ปานกลาง</td><td>สูงมาก</td></tr>
+<tr><td>3</td><td>เย็น</td><td>สูง</td><td>สูงมาก</td></tr>
+<tr><td>4</td><td>ค่อนข้างเย็น</td><td>ต่ำ</td><td>ปานกลาง</td></tr>
+<tr><td>5</td><td>ค่อนข้างเย็น</td><td>ปานกลาง</td><td>สูง</td></tr>
+<tr><td>6</td><td>ค่อนข้างเย็น</td><td>สูง</td><td>สูงมาก</td></tr>
+<tr><td>7</td><td>อุ่น</td><td>ต่ำ</td><td>ต่ำ</td></tr>
+<tr><td>8</td><td>อุ่น</td><td>ปานกลาง</td><td>ปานกลาง</td></tr>
+<tr><td>9</td><td>อุ่น</td><td>สูง</td><td>สูง</td></tr>
+<tr><td>10</td><td>ร้อน</td><td>ต่ำ</td><td>ต่ำมาก</td></tr>
+<tr><td>11</td><td>ร้อน</td><td>ปานกลาง</td><td>ต่ำมาก</td></tr>
+<tr><td>12</td><td>ร้อน</td><td>สูง</td><td>ปานกลาง</td></tr></table>
+<p>ตัวอย่างเช่น ถ้าน้ำปัจจุบันอยู่ในกลุ่ม Cold และเป้าหมายอยู่ในกลุ่ม High
+ระบบจะเปิดวาล์ว VeryHigh เพื่อเร่งการเพิ่มอุณหภูมิ ขณะที่กรณี Hot และเป้าหมาย Low
+จะใช้ VeryLow เพื่อลดการเติมความร้อน</p>
+
+<h2>2. Simulation ผลการทดลอง และการวิเคราะห์</h2>
+<h3>2.1 Control surface</h3>
+<div class="figure"><img src="outputs/2_control_surface.png">
+<div class="caption">รูปที่ 2 ความสัมพันธ์ระหว่างอุณหภูมิปัจจุบัน เป้าหมาย และวาล์ว</div></div>
+<p>พื้นผิวควบคุมแสดงแนวโน้มเชิงเหตุผล: เมื่ออุณหภูมิปัจจุบันต่ำหรือเป้าหมายสูง
+เปอร์เซ็นต์วาล์วเพิ่มขึ้น และเมื่ออุณหภูมิปัจจุบันสูงกว่าเป้าหมาย วาล์วลดลง</p>
+
+<h3>2.2 ผลการจำลองแบบ closed-loop</h3>
+<p>จำลอง 40 time steps ต่อกรณี โดยวาล์วถูกคำนวณใหม่ทุก step จากอุณหภูมิที่วัดได้</p>
+<table><tr><th>สภาวะเริ่มต้น</th><th>เป้าหมาย (°C)</th><th>ระดับ</th>
+<th>อุณหภูมิสุดท้าย (°C)</th><th>error (°C)</th><th>วาล์วเริ่มต้น (%)</th><th>วาล์วสุดท้าย (%)</th></tr>
+<tr><td>น้ำเย็นเริ่มต้น 10°C</td><td>32</td><td>ต่ำ</td><td>32.82</td><td>0.823</td><td>81.25</td><td>39.61</td></tr>
+<tr><td>น้ำเย็นเริ่มต้น 10°C</td><td>42</td><td>สูง</td><td>42.38</td><td>0.383</td><td>90.74</td><td>60.85</td></tr>
+<tr><td>น้ำอุ่นเริ่มต้น 33°C</td><td>36</td><td>ปานกลาง</td><td>37.50</td><td>1.500</td><td>50.00</td><td>50.00</td></tr></table>
+<div class="figure"><img src="outputs/3_time_simulation.png">
+<div class="caption">รูปที่ 3 อุณหภูมิและเปอร์เซ็นต์วาล์วตลอดการจำลอง</div></div>
+
+<h3>2.3 การวิเคราะห์</h3>
+<ul>
+<li>กรณีเป้าหมาย 42°C เริ่มจาก 10°C มี error 0.383°C ซึ่งต่ำที่สุด เพราะกฎ Cold–High
+ให้ความร้อนสูงและการผสมลู่เข้าค่าเป้าหมายได้ดี</li>
+<li>กรณีเป้าหมาย 32°C มี error 0.823°C แสดงว่าระบบสามารถลดการเปิดวาล์วเมื่อเข้าใกล้
+เป้าหมาย แต่การแบ่งเซตแบบ linguistic ทำให้เกิด error คงค้างเล็กน้อย</li>
+<li>กรณีเริ่มที่ 33°C และเป้าหมาย 36°C มี error 1.500°C สูงสุด เนื่องจากระบบต้องรักษา
+สมดุลระหว่างน้ำร้อนและน้ำเย็นด้วยเอาต์พุตแบบเปอร์เซ็นต์ และไม่มีอินพุต error โดยตรง</li>
+<li>ข้อจำกัดของการทดลองคือเป็นแบบจำลอง first-order ที่ไม่รวมอัตราการไหลจริง
+การสูญเสียความร้อน และ noise จากเซนเซอร์ หากนำไปใช้งานจริงควรเพิ่ม calibration,
+anti-windup/compensation หรือออกแบบกฎโดยใช้อุณหภูมิคลาดเคลื่อนร่วมด้วย</li>
+</ul>
+
+<h2>3. สรุปผล</h2>
+<p>ระบบ Mamdani ที่พัฒนาสามารถแปลงข้อมูลอุณหภูมิแบบ crisp เป็นคำสั่งเปิดวาล์วน้ำร้อน
+อย่างต่อเนื่องและอธิบายได้ด้วยฐานกฎ 12 ข้อ ผลการจำลองยืนยันว่าระบบตอบสนองตามทิศทาง
+ที่ต้องการและเข้าใกล้อุณหภูมิเป้าหมายในทุกกรณี โดย error สูงสุด 1.500°C
+เหมาะสำหรับเป็นต้นแบบระบบควบคุมแบบ approximate reasoning</p>
+
+<h2 class="pagebreak">ภาคผนวก: โปรแกรม</h2>
+<p>โปรแกรมฉบับเต็มที่ใช้สร้างผลการทดลองแสดงด้านล่าง สามารถรันด้วย
+<code>python simulate.py</code> หลังติดตั้งแพ็กเกจจาก <code>requirements.txt</code></p>
+<h3>membership.py</h3><pre># membership.py
+# ------------------------------------------------------------------
+# ฟังก์ชันสมาชิก (Membership Function) พื้นฐานที่ใช้ในระบบ Fuzzy Logic
+# รองรับ 2 รูปแบบ:
+#   - Triangular (สามเหลี่ยม) ใช้พารามิเตอร์ [a, b, c]
+#   - Trapezoidal (คางหมู) ใช้พารามิเตอร์ [a, b, c, d]
+# ------------------------------------------------------------------
+
+import numpy as np  # ใช้คำนวณตัวเลขและ Array
+
+
+def trimf(x, params):
+    &quot;&quot;&quot;คำนวณค่าความเป็นสมาชิกของฟังก์ชันรูปสามเหลี่ยม.&quot;&quot;&quot;
+    a, b, c = params  # จุดเริ่ม จุดยอด และจุดสิ้นสุดของสามเหลี่ยม
+    x = np.asarray(x, dtype=float)  # รองรับทั้งค่าเดียวและ NumPy Array
+
+    left = np.zeros_like(x)  # เตรียมค่าด้านซ้าย
+    right = np.zeros_like(x)  # เตรียมค่าด้านขวา
+
+    if b != a:
+        left = (x - a) / (b - a)  # ความชันจาก 0 ที่ a ไป 1 ที่ b
+    else:
+        left = np.where(x &gt;= a, 1.0, 0.0)  # กรณีขอบซ้ายชนกัน
+
+    if c != b:
+        right = (c - x) / (c - b)  # ความชันจาก 1 ที่ b ไป 0 ที่ c
+    else:
+        right = np.where(x &lt;= c, 1.0, 0.0)  # กรณีขอบขวาชนกัน
+
+    y = np.minimum(left, right)  # ต้องผ่านทั้งด้านซ้ายและด้านขวา จึงใช้ค่าที่น้อยกว่า
+    y = np.clip(y, 0.0, 1.0)  # Membership ต้องอยู่ระหว่าง 0 ถึง 1
+    return y
+
+
+def trapmf(x, params):
+    &quot;&quot;&quot;คำนวณค่าความเป็นสมาชิกของฟังก์ชันรูปคางหมู.&quot;&quot;&quot;
+    a, b, c, d = params  # ขอบซ้าย ช่วงราบ และขอบขวาของคางหมู
+    x = np.asarray(x, dtype=float)  # รองรับทั้งค่าเดียวและ NumPy Array
+
+    left = np.ones_like(x)  # ค่าเริ่มต้นด้านซ้ายเป็น 1
+    right = np.ones_like(x)  # ค่าเริ่มต้นด้านขวาเป็น 1
+
+    if b != a:
+        left = (x - a) / (b - a)  # ความชันขึ้นจาก 0 ไป 1
+    if d != c:
+        right = (d - x) / (d - c)  # ความชันลงจาก 1 ไป 0
+
+    y = np.minimum(np.minimum(left, right), 1.0)  # รวมด้านซ้ายและด้านขวา
+    y = np.clip(y, 0.0, 1.0)  # ป้องกันค่าเกินช่วงมาตรฐาน
+    return y
+</pre>
+<h3>fuzzy_controller.py</h3><pre># fuzzy_controller.py
+# ------------------------------------------------------------------
+# ระบบควบคุมอุณหภูมิน้ำอาบด้วย Fuzzy Logic (Mamdani Inference System)
+#
+#   Input  1 : อุณหภูมิน้ำปัจจุบัน   (Current Water Temperature)  หน่วย °C
+#   Input  2 : อุณหภูมิเป้าหมาย     (Target Temperature)         หน่วย °C
+#   Output   : ปริมาณน้ำร้อนที่เปิด  (Hot Water Valve Opening)   หน่วย %
+#
+# ขั้นตอน Mamdani:
+#   1) Fuzzification  - แปลง input จากค่าตัวเลขเป็นค่าความเป็นสมาชิก
+#   2) Rule Evaluation - หาความแรงของกฎ โดยใช้ AND = min
+#   3) Implication     - ตัดกราฟ output ตามความแรงของกฎ
+#   4) Aggregation     - รวมผลของทุกกฎด้วย OR = max
+#   5) Defuzzification - แปลงผลกลับเป็นตัวเลขด้วย Centroid
+# ------------------------------------------------------------------
+
+import numpy as np  # ใช้สร้างช่วงข้อมูลและคำนวณ Array
+from membership import trimf, trapmf  # นำเข้าฟังก์ชันสมาชิกของโปรเจกต์
+
+
+class FuzzyBathController:
+    &quot;&quot;&quot;ตัวควบคุมที่รวม Membership Function, Rule Base และการอนุมาน.&quot;&quot;&quot;
+
+    def __init__(self):
+        # Universe คือช่วงค่าที่ระบบยอมรับและใช้คำนวณ Fuzzy Set
+        self.now_universe = np.linspace(0, 60, 601)  # อุณหภูมิปัจจุบัน 0-60°C
+        self.target_universe = np.linspace(25, 45, 401)  # เป้าหมาย 25-45°C
+        self.valve_universe = np.linspace(0, 100, 1001)  # วาล์ว 0-100%
+
+        # Input 1: แบ่งอุณหภูมิปัจจุบันเป็น Cold, Cool, Warm และ Hot
+        self.now_mf = {
+            &quot;Cold&quot;: lambda x: trapmf(x, [0, 0, 10, 20]),  # น้ำเย็นมาก
+            &quot;Cool&quot;: lambda x: trimf(x, [10, 20, 30]),  # น้ำค่อนข้างเย็น
+            &quot;Warm&quot;: lambda x: trimf(x, [25, 35, 45]),  # น้ำอุ่น
+            &quot;Hot&quot;: lambda x: trapmf(x, [40, 50, 60, 60]),  # น้ำร้อนมาก
+        }
+
+        # Input 2: แบ่งอุณหภูมิเป้าหมายเป็น Low, Medium และ High
+        self.target_mf = {
+            &quot;Low&quot;: lambda x: trapmf(x, [25, 25, 30, 33]),  # เป้าหมายต่ำ
+            &quot;Medium&quot;: lambda x: trimf(x, [30, 36, 42]),  # เป้าหมายปานกลาง
+            &quot;High&quot;: lambda x: trapmf(x, [39, 42, 45, 45]),  # เป้าหมายสูง
+        }
+
+        # Output: แบ่งเปอร์เซ็นต์การเปิดวาล์วเป็น 5 ระดับ
+        self.valve_mf = {
+            &quot;VeryLow&quot;: lambda x: trapmf(x, [0, 0, 10, 25]),  # เปิดน้อยมาก
+            &quot;Low&quot;: lambda x: trimf(x, [10, 25, 40]),  # เปิดน้อย
+            &quot;Medium&quot;: lambda x: trimf(x, [30, 50, 70]),  # เปิดปานกลาง
+            &quot;High&quot;: lambda x: trimf(x, [60, 75, 90]),  # เปิดมาก
+            &quot;VeryHigh&quot;: lambda x: trapmf(x, [75, 90, 100, 100]),  # เปิดมากที่สุด
+        }
+
+        # Rule Base: (อุณหภูมิปัจจุบัน, เป้าหมาย, ผลลัพธ์วาล์ว)
+        self.rules = [
+            (&quot;Cold&quot;, &quot;Low&quot;, &quot;High&quot;),  # น้ำเย็นและเป้าหมายต่ำ
+            (&quot;Cold&quot;, &quot;Medium&quot;, &quot;VeryHigh&quot;),  # น้ำเย็นและเป้าหมายปานกลาง
+            (&quot;Cold&quot;, &quot;High&quot;, &quot;VeryHigh&quot;),  # น้ำเย็นและเป้าหมายสูง
+            (&quot;Cool&quot;, &quot;Low&quot;, &quot;Medium&quot;),  # น้ำค่อนข้างเย็นและเป้าหมายต่ำ
+            (&quot;Cool&quot;, &quot;Medium&quot;, &quot;High&quot;),  # น้ำค่อนข้างเย็นและเป้าหมายปานกลาง
+            (&quot;Cool&quot;, &quot;High&quot;, &quot;VeryHigh&quot;),  # น้ำค่อนข้างเย็นและเป้าหมายสูง
+            (&quot;Warm&quot;, &quot;Low&quot;, &quot;Low&quot;),  # น้ำอุ่นและเป้าหมายต่ำ
+            (&quot;Warm&quot;, &quot;Medium&quot;, &quot;Medium&quot;),  # น้ำอุ่นและเป้าหมายปานกลาง
+            (&quot;Warm&quot;, &quot;High&quot;, &quot;High&quot;),  # น้ำอุ่นและเป้าหมายสูง
+            (&quot;Hot&quot;, &quot;Low&quot;, &quot;VeryLow&quot;),  # น้ำร้อนและเป้าหมายต่ำ
+            (&quot;Hot&quot;, &quot;Medium&quot;, &quot;VeryLow&quot;),  # น้ำร้อนและเป้าหมายปานกลาง
+            (&quot;Hot&quot;, &quot;High&quot;, &quot;Medium&quot;),  # น้ำร้อนและเป้าหมายสูง
+        ]
+
+    def fuzzify_now(self, t_now):
+        &quot;&quot;&quot;คำนวณระดับความเป็นสมาชิกของอุณหภูมิปัจจุบัน.&quot;&quot;&quot;
+        return {name: float(mf(t_now)) for name, mf in self.now_mf.items()}  # คำนวณทุกกลุ่ม
+
+    def fuzzify_target(self, t_target):
+        &quot;&quot;&quot;คำนวณระดับความเป็นสมาชิกของอุณหภูมิเป้าหมาย.&quot;&quot;&quot;
+        return {name: float(mf(t_target)) for name, mf in self.target_mf.items()}  # คำนวณทุกกลุ่ม
+
+    def infer(self, t_now, t_target):
+        &quot;&quot;&quot;ทำ Fuzzification, Rule Evaluation, Implication และ Aggregation.&quot;&quot;&quot;
+        now_degrees = self.fuzzify_now(t_now)  # แปลง input ปัจจุบันเป็น Fuzzy Values
+        target_degrees = self.fuzzify_target(t_target)  # แปลงเป้าหมายเป็น Fuzzy Values
+        aggregated = np.zeros_like(self.valve_universe)  # เริ่ม output รวมเป็นศูนย์
+        fired_rules = []  # เก็บกฎที่ถูกกระตุ้นเพื่อแสดงผล
+
+        for now_term, target_term, valve_term in self.rules:  # ตรวจสอบกฎทีละข้อ
+            firing_strength = min(now_degrees[now_term], target_degrees[target_term])  # AND = min
+            if firing_strength &gt; 0:  # เก็บเฉพาะกฎที่มีผลจริง
+                fired_rules.append((now_term, target_term, valve_term, firing_strength))
+            consequent_mf = self.valve_mf[valve_term](self.valve_universe)  # กราฟ output ของกฎ
+            clipped = np.minimum(consequent_mf, firing_strength)  # Implication: ตัดยอดกราฟ
+            aggregated = np.maximum(aggregated, clipped)  # Aggregation: รวมด้วย max
+
+        return aggregated, fired_rules, now_degrees, target_degrees  # ส่งผลไป Defuzzification
+
+    def defuzzify(self, aggregated):
+        &quot;&quot;&quot;แปลง Fuzzy Output เป็นเปอร์เซ็นต์วาล์วด้วย Centroid.&quot;&quot;&quot;
+        area = np.sum(aggregated)  # พื้นที่โดยประมาณใต้กราฟ output
+        if area == 0:  # ป้องกันการหารด้วยศูนย์กรณีไม่มีกฎทำงาน
+            return float(np.mean(self.valve_universe))  # ใช้ค่ากึ่งกลาง 50% เป็น fallback
+        centroid = np.sum(self.valve_universe * aggregated) / area  # สูตรจุดศูนย์ถ่วง
+        return float(centroid)  # คืนค่าเป็น float ปกติ
+
+    def compute(self, t_now, t_target):
+        &quot;&quot;&quot;เรียกกระบวนการควบคุมทั้งหมดและคืนค่า output.&quot;&quot;&quot;
+        t_now = float(np.clip(t_now, self.now_universe[0], self.now_universe[-1]))  # จำกัด input ปัจจุบัน
+        t_target = float(np.clip(t_target, self.target_universe[0], self.target_universe[-1]))  # จำกัดเป้าหมาย
+        aggregated, fired_rules, now_degrees, target_degrees = self.infer(t_now, t_target)  # อนุมาน
+        valve_opening = self.defuzzify(aggregated)  # แปลงผลเป็นเปอร์เซ็นต์วาล์ว
+        return valve_opening, aggregated, fired_rules, now_degrees, target_degrees  # คืนผลทั้งหมด
+</pre>
+<h3>simulate.py</h3><pre># simulate.py
+# ------------------------------------------------------------------
+# โปรแกรมจำลองการทำงานของระบบควบคุมอุณหภูมิน้ำอาบด้วย Fuzzy Logic
+# (Mamdani Fuzzy Inference System)
+#
+# โปรแกรมนี้จะ
+#   1) วาดกราฟ Membership Function ของ input และ output
+#   2) วาด Control Surface ความสัมพันธ์ระหว่าง input กับ output
+#   3) จำลองการเปลี่ยนอุณหภูมิตามเวลาในหลายสถานการณ์
+#   4) พิมพ์รายละเอียด Fuzzification และกฎที่ถูกกระตุ้น
+#
+# ผลลัพธ์ทุกกราฟจะถูกบันทึกไว้ในโฟลเดอร์ outputs/
+# ------------------------------------------------------------------
+
+import os  # ใช้สร้างโฟลเดอร์ผลลัพธ์
+
+import matplotlib.pyplot as plt  # ใช้วาดกราฟ
+import numpy as np  # ใช้จัดการข้อมูลตัวเลขและช่วงเวลา
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (เปิดใช้งานกราฟ 3D)
+
+from fuzzy_controller import FuzzyBathController  # นำเข้าตัวควบคุม Fuzzy
+
+OUT_DIR = &quot;outputs&quot;  # โฟลเดอร์สำหรับเก็บรูปผลลัพธ์
+plt.rcParams[&quot;font.family&quot;] = &quot;Tahoma&quot;  # ฟอนต์ที่รองรับภาษาไทยบน Windows
+plt.rcParams[&quot;axes.unicode_minus&quot;] = False  # แก้ปัญหาเครื่องหมายลบในกราฟ
+
+
+def plot_membership_functions(fc: FuzzyBathController):
+    &quot;&quot;&quot;วาด Membership Function ของ input และ output ทั้งหมด.&quot;&quot;&quot;
+    fig, axes = plt.subplots(3, 1, figsize=(8, 9))  # สร้างกราฟ 3 แถว
+
+    for name, mf in fc.now_mf.items():  # วนผ่านกลุ่มอุณหภูมิปัจจุบัน
+        axes[0].plot(fc.now_universe, mf(fc.now_universe), label=name)  # วาดเส้นกลุ่มนั้น
+    axes[0].set_title(&quot;Input 1: อุณหภูมิน้ำปัจจุบัน (Current Water Temperature, °C)&quot;)
+    axes[0].set_xlabel(&quot;Temperature (°C)&quot;)  # ชื่อแกนนอน
+    axes[0].set_ylabel(&quot;Membership Degree&quot;)  # ชื่อแกนตั้ง
+    axes[0].legend()  # แสดงชื่อเส้น
+    axes[0].grid(alpha=0.3)  # แสดงเส้นตารางจาง ๆ
+
+    for name, mf in fc.target_mf.items():  # วนผ่านกลุ่มอุณหภูมิเป้าหมาย
+        axes[1].plot(fc.target_universe, mf(fc.target_universe), label=name)  # วาดเส้นกลุ่มนั้น
+    axes[1].set_title(&quot;Input 2: อุณหภูมิเป้าหมาย (Target Temperature, °C)&quot;)
+    axes[1].set_xlabel(&quot;Temperature (°C)&quot;)  # ชื่อแกนนอน
+    axes[1].set_ylabel(&quot;Membership Degree&quot;)  # ชื่อแกนตั้ง
+    axes[1].legend()  # แสดงชื่อเส้น
+    axes[1].grid(alpha=0.3)  # แสดงเส้นตาราง
+
+    for name, mf in fc.valve_mf.items():  # วนผ่านกลุ่มเปอร์เซ็นต์วาล์ว
+        axes[2].plot(fc.valve_universe, mf(fc.valve_universe), label=name)  # วาดเส้นกลุ่มนั้น
+    axes[2].set_title(&quot;Output: ปริมาณน้ำร้อน (Hot Water Valve Opening, %)&quot;)
+    axes[2].set_xlabel(&quot;Valve Opening (%)&quot;)  # ชื่อแกนนอน
+    axes[2].set_ylabel(&quot;Membership Degree&quot;)  # ชื่อแกนตั้ง
+    axes[2].legend()  # แสดงชื่อเส้น
+    axes[2].grid(alpha=0.3)  # แสดงเส้นตาราง
+
+    fig.tight_layout()  # จัดระยะห่างของกราฟ
+    fig.savefig(f&quot;{OUT_DIR}/1_membership_functions.png&quot;, dpi=150)  # บันทึกกราฟ
+    plt.close(fig)  # ปิดกราฟและคืนหน่วยความจำ
+
+
+def plot_control_surface(fc: FuzzyBathController):
+    &quot;&quot;&quot;วาด Control Surface แบบสามมิติของระบบ.&quot;&quot;&quot;
+    now_range = np.linspace(fc.now_universe[0], fc.now_universe[-1], 40)  # ตัวอย่าง current temp
+    target_range = np.linspace(fc.target_universe[0], fc.target_universe[-1], 40)  # ตัวอย่าง target
+    NOW, TARGET = np.meshgrid(now_range, target_range)  # สร้างคู่ input ทุกคู่
+    VALVE = np.zeros_like(NOW)  # เตรียมตารางเก็บ output
+
+    for i in range(NOW.shape[0]):  # วนทุกแถวของตาราง
+        for j in range(NOW.shape[1]):  # วนทุกคอลัมน์ของตาราง
+            valve_opening, *_ = fc.compute(NOW[i, j], TARGET[i, j])  # คำนวณวาล์ว
+            VALVE[i, j] = valve_opening  # เก็บ output ลงตำแหน่งเดียวกัน
+
+    fig = plt.figure(figsize=(8, 6))  # สร้างพื้นที่กราฟ
+    ax = fig.add_subplot(111, projection=&quot;3d&quot;)  # เพิ่มแกนสามมิติ
+    surf = ax.plot_surface(NOW, TARGET, VALVE, cmap=&quot;viridis&quot;, edgecolor=&quot;none&quot;)  # วาดพื้นผิว
+    ax.set_xlabel(&quot;อุณหภูมิน้ำปัจจุบัน (°C)&quot;)  # ชื่อแกน X
+    ax.set_ylabel(&quot;อุณหภูมิเป้าหมาย (°C)&quot;)  # ชื่อแกน Y
+    ax.set_zlabel(&quot;ปริมาณน้ำร้อน (%)&quot;)  # ชื่อแกน Z
+    ax.set_title(&quot;Control Surface ของระบบ Fuzzy Logic&quot;)  # ชื่อกราฟ
+    fig.colorbar(surf, shrink=0.6, aspect=12, label=&quot;Valve Opening (%)&quot;)  # แถบสี
+    fig.tight_layout()  # จัดรูปแบบกราฟ
+    fig.savefig(f&quot;{OUT_DIR}/2_control_surface.png&quot;, dpi=150)  # บันทึกกราฟ
+    plt.close(fig)  # ปิดกราฟ
+
+
+def simulate_scenario(fc: FuzzyBathController, t_now_init, t_target,
+                      t_hot=60.0, t_cold=15.0, k=0.25, steps=40):
+    &quot;&quot;&quot;จำลองการผสมน้ำแบบ First-order ตามจำนวน time step.&quot;&quot;&quot;
+    t_now = t_now_init  # อุณหภูมิเริ่มต้นในอ่าง
+    temps = [t_now]  # เก็บอุณหภูมิ รวมค่าเริ่มต้น
+    valves = []  # เก็บค่าเปิดวาล์วของแต่ละรอบ
+
+    for _ in range(steps):  # ทำซ้ำตามจำนวนรอบ
+        valve_opening, *_ = fc.compute(t_now, t_target)  # ให้ Fuzzy คำนวณวาล์ว
+        valves.append(valve_opening)  # บันทึกค่าเปิดวาล์ว
+        t_mix_in = t_cold + (valve_opening / 100.0) * (t_hot - t_cold)  # อุณหภูมิน้ำผสมเข้า
+        t_now = t_now + k * (t_mix_in - t_now)  # อัปเดตอุณหภูมิแบบ First-order
+        temps.append(t_now)  # บันทึกอุณหภูมิใหม่
+
+    return np.array(temps), np.array(valves)  # คืนผลเป็น NumPy Array
+
+
+def plot_simulation_scenarios(fc: FuzzyBathController):
+    &quot;&quot;&quot;จำลอง 3 สถานการณ์และวาดอุณหภูมิกับวาล์วเทียบเวลา.&quot;&quot;&quot;
+    scenarios = [  # เลือกกรณีทดสอบให้ครอบคลุมหลายระดับ
+        {&quot;label&quot;: &quot;น้ำเย็นเริ่มต้น 10°C, เป้าหมาย 32°C (Low)&quot;, &quot;t_now&quot;: 10, &quot;t_target&quot;: 32},
+        {&quot;label&quot;: &quot;น้ำเย็นเริ่มต้น 10°C, เป้าหมาย 42°C (High)&quot;, &quot;t_now&quot;: 10, &quot;t_target&quot;: 42},
+        {&quot;label&quot;: &quot;น้ำอุ่นเริ่มต้น 33°C, เป้าหมาย 36°C (Medium)&quot;, &quot;t_now&quot;: 33, &quot;t_target&quot;: 36},
+    ]
+    fig, axes = plt.subplots(len(scenarios), 2, figsize=(11, 10))  # กราฟ 3 แถว 2 คอลัมน์
+
+    for row, sc in enumerate(scenarios):  # วนทีละสถานการณ์
+        temps, valves = simulate_scenario(fc, sc[&quot;t_now&quot;], sc[&quot;t_target&quot;])  # รัน simulation
+        t_axis_temp = np.arange(len(temps))  # แกนเวลาของอุณหภูมิ
+        t_axis_valve = np.arange(len(valves))  # แกนเวลาของวาล์ว
+
+        axes[row, 0].plot(t_axis_temp, temps, color=&quot;tab:red&quot;, marker=&quot;o&quot;, markersize=3)  # อุณหภูมิ
+        axes[row, 0].axhline(sc[&quot;t_target&quot;], color=&quot;black&quot;, linestyle=&quot;--&quot;, label=&quot;Target&quot;)  # เป้าหมาย
+        axes[row, 0].set_title(f&quot;อุณหภูมิน้ำ vs เวลา\n{sc[&#x27;label&#x27;]}&quot;)  # ชื่อกราฟ
+        axes[row, 0].set_xlabel(&quot;Time step&quot;)  # ชื่อแกนนอน
+        axes[row, 0].set_ylabel(&quot;Temperature (°C)&quot;)  # ชื่อแกนตั้ง
+        axes[row, 0].legend()  # แสดงคำอธิบาย
+        axes[row, 0].grid(alpha=0.3)  # แสดงตาราง
+
+        axes[row, 1].plot(t_axis_valve, valves, color=&quot;tab:blue&quot;, marker=&quot;o&quot;, markersize=3)  # วาล์ว
+        axes[row, 1].set_title(f&quot;ปริมาณน้ำร้อน (วาล์ว %) vs เวลา\n{sc[&#x27;label&#x27;]}&quot;)  # ชื่อกราฟ
+        axes[row, 1].set_xlabel(&quot;Time step&quot;)  # ชื่อแกนนอน
+        axes[row, 1].set_ylabel(&quot;Valve Opening (%)&quot;)  # ชื่อแกนตั้ง
+        axes[row, 1].grid(alpha=0.3)  # แสดงตาราง
+
+        final_temp = temps[-1]  # อ่านอุณหภูมิสุดท้าย
+        error = abs(sc[&quot;t_target&quot;] - final_temp)  # คำนวณ error แบบค่าสัมบูรณ์
+        print(f&quot;[Scenario] {sc[&#x27;label&#x27;]}&quot;)  # แสดงชื่อกรณีใน console
+        print(f&quot;    -&gt; อุณหภูมิสุดท้ายหลัง {len(temps)-1} step = {final_temp:.2f} °C &quot;
+              f&quot;(ค่าคลาดเคลื่อนจากเป้าหมาย = {error:.3f} °C)&quot;)  # แสดงผลวิเคราะห์
+
+    fig.tight_layout()  # จัดระยะห่าง
+    fig.savefig(f&quot;{OUT_DIR}/3_time_simulation.png&quot;, dpi=150)  # บันทึกกราฟ
+    plt.close(fig)  # ปิดกราฟ
+
+
+def print_example_inference(fc: FuzzyBathController, t_now, t_target):
+    &quot;&quot;&quot;พิมพ์รายละเอียด Fuzzification และกฎของตัวอย่าง.&quot;&quot;&quot;
+    valve_opening, _, fired_rules, now_deg, target_deg = fc.compute(t_now, t_target)  # เรียก Fuzzy
+    print(&quot;=&quot; * 60)  # เส้นคั่น
+    print(f&quot;ตัวอย่างการคำนวณ: T_now = {t_now} °C, T_target = {t_target} °C&quot;)  # แสดง input
+    print(&quot;-&quot; * 60)  # เส้นคั่นย่อย
+    print(&quot;ค่าความเป็นสมาชิกของ Input 1 (อุณหภูมิน้ำปัจจุบัน):&quot;)  # หัวข้อ
+    for k, v in now_deg.items():  # วนค่าของ current temperature
+        print(f&quot;    {k:8s} = {v:.3f}&quot;)  # แสดง membership
+    print(&quot;ค่าความเป็นสมาชิกของ Input 2 (อุณหภูมิเป้าหมาย):&quot;)  # หัวข้อ
+    for k, v in target_deg.items():  # วนค่าของ target temperature
+        print(f&quot;    {k:8s} = {v:.3f}&quot;)  # แสดง membership
+    print(&quot;กฎที่ถูกกระตุ้น (Firing strength &gt; 0):&quot;)  # หัวข้อกฎ
+    for now_term, target_term, valve_term, strength in fired_rules:  # วนกฎที่ทำงาน
+        print(f&quot;    IF now={now_term:5s} AND target={target_term:6s} &quot;
+              f&quot;THEN valve={valve_term:8s}   (firing strength = {strength:.3f})&quot;)  # แสดงกฎ
+    print(f&quot;ผลลัพธ์หลัง Defuzzification (Centroid): ปริมาณน้ำร้อน = {valve_opening:.2f} %&quot;)  # output
+    print(&quot;=&quot; * 60)  # ปิดส่วนแสดงผล
+
+
+if __name__ == &quot;__main__&quot;:
+    os.makedirs(OUT_DIR, exist_ok=True)  # สร้างโฟลเดอร์ output ถ้ายังไม่มี
+    fc = FuzzyBathController()  # สร้างตัวควบคุม
+    print(&quot;กำลังวาดกราฟฟังก์ชันสมาชิก (membership functions) ...&quot;)  # แจ้งสถานะ
+    plot_membership_functions(fc)  # สร้างกราฟ Membership
+    print(&quot;กำลังวาด control surface ...&quot;)  # แจ้งสถานะ
+    plot_control_surface(fc)  # สร้างกราฟ Control Surface
+    print(&quot;กำลังจำลองการทำงานของระบบตามเวลา (time-domain simulation) ...&quot;)  # แจ้งสถานะ
+    plot_simulation_scenarios(fc)  # สร้างกราฟ simulation
+    print()  # เว้นบรรทัด
+    print_example_inference(fc, t_now=15, t_target=40)  # แสดงตัวอย่าง inference
+    print()  # เว้นบรรทัด
+    print(f&quot;บันทึกกราฟทั้งหมดไว้ในโฟลเดอร์ &#x27;{OUT_DIR}/&#x27; เรียบร้อยแล้ว&quot;)  # แจ้งผลสำเร็จ
+</pre>
+</body></html>

@@ -1,0 +1,24 @@
+TITLE|รายงานการทดลอง Multi-Layer Perceptron ด้วย Backpropagation
+SUBTITLE|รายวิชา CPE 261456 Introduction to Computational Intelligence
+SUBTITLE|ชื่อ-นามสกุล: นางสาววีระวรรณ ก้อนคำ    รหัสนักศึกษา: 670610782
+H|1. วัตถุประสงค์
+P|พัฒนา Multi-Layer Perceptron (MLP) พร้อม Backpropagation และ momentum ด้วยภาษา Python โดยเขียนขั้นตอนการคำนวณด้วยตนเอง ไม่ใช้ machine-learning library แล้วทดลองทำนายระดับน้ำล่วงหน้า 7 ชั่วโมงและจำแนกข้อมูล 2 classes พร้อมเปรียบเทียบ hidden nodes/layers, learning rate, momentum และ initial weights
+H|2. วิธีการ
+P|โครงข่ายใช้ sigmoid activation ทุกชั้น ทำ forward pass เพื่อหา output แล้วคำนวณ delta ของ output layer จาก error และ sigmoid derivative จากนั้นคำนวณ delta ของ hidden layer ย้อนกลับจากชั้นถัดไป และปรับ weight กับ bias ด้วย Generalized Delta Rule พร้อม momentum: Δw = ηδx + αΔw(previous)
+P|ทั้งสองชุดข้อมูลใช้ 10-fold cross validation โดยแบ่งข้อมูลเป็น 10 folds ด้วย split seed = 42 ใช้ 9 folds train และ 1 fold test สลับจนครบ 10 รอบ แล้วรายงานค่าเฉลี่ยและ sample standard deviation ของแต่ละ fold
+P|Flood dataset มี 8 input features จากระดับน้ำย้อนหลัง 4 ชั่วโมงของ 2 สถานี เพื่อทำนายระดับน้ำสะพานนวรัฐที่ t+7 ข้อมูลถูก normalize ไปช่วง [0.1, 0.9] โดยหา min/max จาก training set ของแต่ละ fold เท่านั้นเพื่อป้องกัน data leakage และวัดผลด้วย MAE บนสเกลจริง ส่วน cross.pat มี 2 features และ one-hot labels 2 classes วัดด้วย accuracy และ confusion matrix
+H|3. การตั้งค่าการทดลอง
+P|ทุกชุด train 300 epochs Baseline Flood คือ hidden=[5], learning rate=0.10, momentum=0.50 และ baseline cross.pat คือ hidden=[4], learning rate=0.10, momentum=0.50 จากนั้นเปลี่ยนทีละปัจจัย ได้แก่ hidden nodes/layers, learning rate, momentum และ weight seed = 1, 42, 99 โดยคง split seed เดิม ค่า MSE ที่ epoch 1, 100, 200 และ 300 เป็นค่าเฉลี่ยจาก training ของ 10 folds ใช้เปรียบเทียบความเร็วในการ converge โดยไม่ใช้รูปกราฟ
+H|4. ผลการทดลอง: Flood dataset
+H|5. ผลการทดลอง: cross.pat
+H|6. วิเคราะห์ผลการทดลอง
+P|Flood: learning rate=0.03 ให้ MSE epoch 300 = 0.002905 และ MAE 17.178 แสดงว่าเรียนช้าเกินไปภายใน 300 epochs ขณะที่ learning rate=0.30 ให้ MSE epoch 300 = 0.000959 และ MAE ต่ำสุด 9.281 จึง converge เร็วและให้ผล test ดีที่สุด Momentum=0.90 ให้ MAE 9.620 ใกล้เคียง แต่ SD สูงกว่า การเพิ่ม hidden nodes เป็น 10 หรือเพิ่มเป็น 2 hidden layers ไม่ได้ช่วยให้ MAE ดีขึ้น
+P|cross.pat: learning rate=0.30 ให้ MSE epoch 300 = 0.039800 และ accuracy สูงสุด 94.50% ดีกว่า learning rate=0.03 ที่ยังมี MSE 0.244715 และ accuracy 48.00% Momentum=0.90 ช่วยให้ MSE ลดเร็วขึ้นและ accuracy 90.50% แต่ยังต่ำกว่าค่า learning rate=0.30 เครือข่าย [8,4] ให้ accuracy 54.50% จึงสรุปได้ว่าโครงสร้างที่ซับซ้อนขึ้นไม่ได้รับประกันผลที่ดีขึ้น
+P|ผลจาก weight seed ที่ 1, 42 และ 99 แตกต่างกัน ทั้ง MAE/accuracy และค่า MSE แสดงว่า initial weights มีผลต่อ gradient descent จึงต้องรายงาน seed และคงการแบ่ง folds เดิมเมื่อเปรียบเทียบการตั้งค่าอื่น
+H|7. สรุป
+P|ได้พัฒนา MLP พร้อม Backpropagation, momentum และ 10-fold cross validation ด้วยตนเอง Flood ใช้ MAE บนสเกลจริง และ cross.pat ใช้ accuracy กับ confusion matrix ชุดที่ดีที่สุดในการทดลองนี้คือ F06 สำหรับ Flood และ C06 สำหรับ cross.pat ภายใต้ 300 epochs และชุดข้อมูลที่กำหนด
+LABEL_FLOOD_MSE|ตารางค่า MSE เฉลี่ยระหว่าง train ของ Flood dataset
+LABEL_CROSS_MSE|ตารางค่า MSE เฉลี่ยระหว่าง train ของ cross.pat
+LABEL_CONFUSION|Confusion matrix ของชุด C06-lr-0.30
+APPENDIX|ภาคผนวก: Source code
+APPENDIX_P|โค้ดต่อไปนี้เป็นการ copy-paste จากไฟล์ที่ใช้รันจริง และมี comments กำกับในโค้ด
